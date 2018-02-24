@@ -42,6 +42,13 @@
             @Html.DisplayFor(model => model.VetName)
         </dd>
 
+        @{
+            if (Model.NeedsCheckup)
+            {
+                <dd>Your pet is sick.</dd>
+            }
+        }
+
         <dt>
             @Html.DisplayNameFor(model => model.NextCheckup)
         </dt>

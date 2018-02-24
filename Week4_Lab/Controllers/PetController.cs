@@ -6,18 +6,23 @@ using System.Web.Mvc;
 using Week4_Lab.Data;
 using Week4_Lab.Data.Entities;
 using Week4_Lab.Models.View;
+using Week4_Lab.Services;
 
 namespace Week4_Lab.Controllers
 {
     public class PetController : Controller
     {
+        private IPetService service;
+        public PetController(IPetService service)
+        {
+            this.service = service;
+        }
+
         public ActionResult List(int userId)
         {
             ViewBag.UserId = userId;
 
-            var pets = GetPetsForUser(userId);
-
-            return View(pets);
+            return View(service.GetPetsForUser(userId));
         }
 
         [HttpGet]
@@ -33,7 +38,7 @@ namespace Week4_Lab.Controllers
         {
             if (ModelState.IsValid)
             {
-                Save(petViewModel);
+                service.CreatePet(petViewModel);
                 return RedirectToAction("List", new { petViewModel.UserId });
             }
 
@@ -43,7 +48,7 @@ namespace Week4_Lab.Controllers
         [HttpGet]
         public ActionResult Edit(int id)
         {
-            var pet = GetPet(id);
+            var pet = service.GetPet(id);
 
             return View(pet);
         }
@@ -51,11 +56,11 @@ namespace Week4_Lab.Controllers
         [HttpPost]
         public ActionResult Edit(PetViewModel petViewModel)
         {
-            petViewModel.UserId = GetPet(petViewModel.Id).UserId;
+            petViewModel.UserId = service.GetPet(petViewModel.Id).UserId;
 
             if (ModelState.IsValid)
             {
-                UpdatePet(petViewModel);
+                service.UpdatePet(petViewModel);
 
                 return RedirectToAction("List", new { petViewModel.UserId });
             }
@@ -63,117 +68,21 @@ namespace Week4_Lab.Controllers
             return View();
         }
 
-        private void UpdatePet(PetViewModel petViewModel)
-        {
-            var dbContext = new AppDbContext();
-
-            var pet = dbContext.Pets.Find(petViewModel.Id);
-
-            CopyToPet(petViewModel, pet);
-
-            dbContext.SaveChanges();
-        }
-
         public ActionResult Details(int id)
         {
-            var pet = GetPet(id);
+            var pet = service.GetPet(id);
+            service.MarkCheckupFlag(pet);
 
             return View(pet);
         }
 
-        private void CopyToPet(PetViewModel petViewModel, Pet pet)
-        {
-            pet.Name = petViewModel.Name;
-            pet.Age = petViewModel.Age;
-            pet.NextCheckup = petViewModel.NextCheckup;
-            pet.VetName = petViewModel.VetName;
-            pet.UserId = petViewModel.UserId;
-            pet.Id = petViewModel.Id;
-        }
-
-        private PetViewModel GetPet(int petId)
-        {
-            var dbContext = new AppDbContext();
-
-            var pet = dbContext.Pets.Find(petId);
-
-            return MapToPetViewModel(pet);
-        }
-
         public ActionResult Delete(int id)
         {
-            var pet = GetPet(id);
+            var pet = service.GetPet(id);
 
-            DeletePet(id);
+            service.DeletePet(id);
 
             return RedirectToAction("List", new { UserId = pet.UserId });
-        }
-
-        private ICollection<PetViewModel> GetPetsForUser(int userId)
-        {
-            var petViewModels = new List<PetViewModel>();
-
-            var dbContext = new AppDbContext();
-
-            var pets = dbContext.Pets.Where(pet => pet.UserId == userId).ToList();
-
-            foreach (var pet in pets)
-            {
-                var petViewModel = MapToPetViewModel(pet);
-                petViewModels.Add(petViewModel);
-            }
-
-            return petViewModels;
-        }
-
-        private void DeletePet(int id)
-        {
-            var dbContext = new AppDbContext();
-
-            var pet = dbContext.Pets.Find(id);
-
-            if (pet != null)
-            {
-                dbContext.Pets.Remove(pet);
-                dbContext.SaveChanges();
-            }
-        }
-
-        private void Save(PetViewModel petViewModel)
-        {
-            var dbContext = new AppDbContext();
-
-            var pet = MapToPet(petViewModel);
-
-            dbContext.Pets.Add(pet);
-
-            dbContext.SaveChanges();
-        }
-
-        private Pet MapToPet(PetViewModel petViewModel)
-        {
-            return new Pet
-            {
-                Id = petViewModel.Id,
-                Name = petViewModel.Name,
-                Age = petViewModel.Age,
-                NextCheckup = petViewModel.NextCheckup,
-                VetName = petViewModel.VetName,
-                UserId = petViewModel.UserId
-            };
-        }
-
-        private PetViewModel MapToPetViewModel(Pet pet)
-        {
-            return new PetViewModel
-            {
-                Id = pet.Id,
-                Name = pet.Name,
-                Age = pet.Age,
-                NextCheckup = pet.NextCheckup,
-                VetName = pet.VetName,
-                UserId = pet.UserId
-            };
         }
     }
 }

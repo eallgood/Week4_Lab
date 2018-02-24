@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
+using Week4_Lab.App_Start;
 
 namespace Week4_Lab
 {
@@ -16,6 +17,7 @@ namespace Week4_Lab
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            DependencyInjectorConfig.Register();
         }
     }
 }
